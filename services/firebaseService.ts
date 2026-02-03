@@ -1,5 +1,5 @@
 
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApp, getApps } from "firebase/app";
 import { 
   getFirestore, 
   collection, 
@@ -23,17 +23,14 @@ const firebaseConfig = {
 };
 
 let db: any = null;
-let isFirebaseInitialized = false;
-
-// We use a flag to track if we should even try to use Firebase after a critical failure (like "not-found")
 let firebaseActive = true;
 
 try {
-  const app = initializeApp(firebaseConfig);
+  // Use existing app if initialized, otherwise initialize new one
+  const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
   db = getFirestore(app);
-  isFirebaseInitialized = true;
 } catch (e) {
-  console.warn("Firebase initialization failed:", e);
+  console.warn("Firebase/Firestore initialization failed:", e);
   firebaseActive = false;
 }
 
@@ -65,7 +62,7 @@ const saveLocalData = <T>(key: string, data: T[]) => {
 
 export const firebaseService = {
   async getCards(): Promise<Flashcard[]> {
-    if (isFirebaseInitialized && firebaseActive) {
+    if (db && firebaseActive) {
       try {
         const cardsCol = collection(db, `users/${UID}/flashcards`);
         const q = query(cardsCol, orderBy("createdAt", "desc"));
@@ -93,11 +90,9 @@ export const firebaseService = {
     }
     saveLocalData(LOCAL_CARDS_KEY, localCards);
 
-    if (isFirebaseInitialized && firebaseActive) {
+    if (db && firebaseActive) {
       try {
         const cardToSave = { ...card };
-        // Si el string de la imagen excede un límite seguro para Firestore (1MB por documento)
-        // Lo omitimos en la sincronización a la nube para evitar errores, pero se mantiene en local.
         if (cardToSave.mnemonicImageUrl && cardToSave.mnemonicImageUrl.length > 800000) {
            console.warn(`Imagen mnemotécnica para "${card.phrase}" demasiado grande para Firestore. Se omitirá en la nube.`);
            delete cardToSave.mnemonicImageUrl;
@@ -117,7 +112,7 @@ export const firebaseService = {
     const filtered = localCards.filter(c => c.id !== id);
     saveLocalData(LOCAL_CARDS_KEY, filtered);
 
-    if (isFirebaseInitialized && firebaseActive) {
+    if (db && firebaseActive) {
       try {
         const cardDoc = doc(db, `users/${UID}/flashcards`, id);
         await deleteDoc(cardDoc);
@@ -129,7 +124,7 @@ export const firebaseService = {
   },
 
   async getExamHistory(): Promise<ExamReport[]> {
-    if (isFirebaseInitialized && firebaseActive) {
+    if (db && firebaseActive) {
       try {
         const historyCol = collection(db, `users/${UID}/examHistory`);
         const q = query(historyCol, orderBy("date", "desc"));
@@ -150,7 +145,7 @@ export const firebaseService = {
     localHistory.unshift(report);
     saveLocalData(LOCAL_HISTORY_KEY, localHistory);
 
-    if (isFirebaseInitialized && firebaseActive) {
+    if (db && firebaseActive) {
       try {
         const reportDoc = doc(db, `users/${UID}/examHistory`, report.id);
         await setDoc(reportDoc, report);
