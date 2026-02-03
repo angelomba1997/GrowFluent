@@ -1,0 +1,7 @@
+{
+  "name": "GrowFluent",
+  "description": "Una aplicación interactiva para aprender Inglés y Catalán desde Español (Latam), con sistema de revisión diaria y explicaciones impulsadas por IA.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
