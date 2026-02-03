@@ -79,6 +79,10 @@ export const generateMnemonicImage = async (phrase: string, translation: string)
           },
         ],
       },
+      config: {
+        // Disabling thinking for image tasks as they don't use it, but keeping it consistent
+        thinkingConfig: { thinkingBudget: 0 }
+      }
     });
     
     for (const part of response.candidates[0].content.parts) {
@@ -103,6 +107,7 @@ export const translatePhrase = async (phrase: string, sourceLang: Language): Pro
       model: "gemini-3-flash-preview",
       contents: `Analiza: "${phrase}" para un estudiante de ${langName}. El idioma nativo del estudiante es Español (Latinoamericano). Responde en JSON.`,
       config: {
+        thinkingConfig: { thinkingBudget: 0 },
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -168,6 +173,7 @@ export const gradeAnswer = async (
       model: "gemini-3-flash-preview",
       contents: contents,
       config: {
+        thinkingConfig: { thinkingBudget: 0 },
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -220,6 +226,7 @@ export const generateExamQuestions = async (cards: Flashcard[], targetLang: Lang
          - 'voice': Leer una oración compleja en ${langName} que contenga la palabra.
       4. Las oraciones deben ser naturales y de uso diario.`,
       config: {
+        thinkingConfig: { thinkingBudget: 0 },
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.ARRAY,
@@ -249,6 +256,7 @@ export const evaluateSentence = async (sentence: string, targetWord: string, lan
       model: "gemini-3-flash-preview",
       contents: `Evalúa la oración: "${sentence}" usando la palabra "${targetWord}" en el idioma ${getLangName(lang)}. Responde en JSON.`,
       config: {
+        thinkingConfig: { thinkingBudget: 0 },
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -278,6 +286,7 @@ export const generateAudio = async (text: string, lang: Language): Promise<strin
       model: "gemini-2.5-flash-preview-tts",
       contents: [{ parts: [{ text: `Say clearly: ${text}` }] }],
       config: {
+        thinkingConfig: { thinkingBudget: 0 },
         responseModalities: ['AUDIO'],
         speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName } } },
       },
@@ -293,6 +302,7 @@ export const evaluatePronunciation = async (audioBase64: string, targetText: str
       model: "gemini-3-flash-preview",
       contents: [{ parts: [{ inlineData: { mimeType, data: audioBase64 } }, { text: `Evaluate pronunciation of: "${targetText}" in ${getLangName(lang)}. JSON feedback.` }] }],
       config: {
+        thinkingConfig: { thinkingBudget: 0 },
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
