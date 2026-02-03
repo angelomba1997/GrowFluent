@@ -13,6 +13,7 @@ async function withRetry<T>(fn: () => Promise<T>, retries = 2, delay = 1500): Pr
       error?.message?.toLowerCase().includes('quota');
 
     if (isQuotaError && retries > 0) {
+      console.warn(`Quota exceeded, retrying in ${delay}ms...`);
       await new Promise(resolve => setTimeout(resolve, delay));
       return withRetry(fn, retries - 1, delay * 2);
     }
@@ -20,7 +21,12 @@ async function withRetry<T>(fn: () => Promise<T>, retries = 2, delay = 1500): Pr
   }
 }
 
-const getAI = () => new GoogleGenAI({ apiKey: process.env.API_KEY });
+const getAI = () => {
+  if (!process.env.API_KEY) {
+    throw new Error("API Key missing. Please configure your Gemini API Key.");
+  }
+  return new GoogleGenAI({ apiKey: process.env.API_KEY });
+};
 
 const getLangName = (lang: Language) => {
   switch(lang) {
@@ -59,7 +65,6 @@ const compressImage = async (base64Str: string): Promise<string> => {
       canvas.height = height;
       const ctx = canvas.getContext('2d');
       ctx?.drawImage(img, 0, 0, width, height);
-      // Convertimos a JPEG con calidad 0.7 para reducir drásticamente el peso
       resolve(canvas.toDataURL('image/jpeg', 0.7));
     };
     img.onerror = () => resolve(base64Str);
@@ -80,20 +85,20 @@ export const generateMnemonicImage = async (phrase: string, translation: string)
         ],
       },
       config: {
-        // Disabling thinking for image tasks as they don't use it, but keeping it consistent
         thinkingConfig: { thinkingBudget: 0 }
       }
     });
     
-    for (const part of response.candidates[0].content.parts) {
-      if (part.inlineData) {
-        const rawBase64 = `data:image/png;base64,${part.inlineData.data}`;
-        // Comprimimos antes de devolverla
-        return await compressImage(rawBase64);
+    if (response.candidates?.[0]?.content?.parts) {
+      for (const part of response.candidates[0].content.parts) {
+        if (part.inlineData) {
+          const rawBase64 = `data:image/png;base64,${part.inlineData.data}`;
+          return await compressImage(rawBase64);
+        }
       }
     }
   } catch (e) {
-    console.error("Image generation failed", e);
+    console.error("Mnemonic image generation failed, skipping image.", e);
   }
   return undefined;
 };
@@ -102,6 +107,8 @@ export const translatePhrase = async (phrase: string, sourceLang: Language): Pro
   return withRetry(async () => {
     const ai = getAI();
     const langName = getLangName(sourceLang);
+    
+    console.log(`Translating phrase: "${phrase}" to ${langName}...`);
     
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
@@ -127,10 +134,21 @@ export const translatePhrase = async (phrase: string, sourceLang: Language): Pro
       }
     });
     
-    const baseData = JSON.parse(response.text.trim());
+    const text = response.text;
+    if (!text) {
+      throw new Error("The AI returned an empty response.");
+    }
     
-    // Generar imagen mnemotécnica en paralelo para no bloquear
-    const mnemonicImageUrl = await generateMnemonicImage(phrase, baseData.translation);
+    const baseData = JSON.parse(text.trim());
+    console.log("Translation successful, generating mnemonic image...");
+    
+    // We attempt image generation but won't let it fail the whole translation if it errors out
+    let mnemonicImageUrl;
+    try {
+      mnemonicImageUrl = await generateMnemonicImage(phrase, baseData.translation);
+    } catch (imgErr) {
+      console.warn("Failed to generate image, proceeding without it", imgErr);
+    }
     
     return { ...baseData, mnemonicImageUrl };
   });

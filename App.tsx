@@ -114,10 +114,13 @@ const App: React.FC = () => {
   };
 
   const handleAddPhrase = async (phrase: string) => {
+    console.log(`Attempting to add phrase: "${phrase}"`);
     setIsLoadingAdd(true);
     setErrorQuota(false);
     try {
       const data = await translatePhrase(phrase, activeTab);
+      console.log("Translation data received:", data);
+      
       const newCard: Flashcard = {
         id: crypto.randomUUID(),
         phrase,
@@ -136,11 +139,19 @@ const App: React.FC = () => {
         sentenceHistory: []
       };
       
+      console.log("Saving card to database...");
       await firebaseService.saveCard(newCard);
+      console.log("Card saved successfully.");
+      
       setCards(prev => [newCard, ...prev]);
     } catch (error: any) {
+      console.error("Error in handleAddPhrase:", error);
       const isQuota = error?.message?.toLowerCase().includes('quota') || error?.status === 429;
-      if (isQuota) setErrorQuota(true);
+      if (isQuota) {
+        setErrorQuota(true);
+      } else {
+        alert("Hubo un error al procesar la palabra. Por favor intenta de nuevo.");
+      }
     } finally {
       setIsLoadingAdd(false);
     }
