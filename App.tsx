@@ -1,18 +1,18 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Language, Flashcard, ExamReport, SentenceEntry, PracticeResult } from './types';
-import { translatePhrase } from './services/geminiService';
-import { firebaseService } from './services/firebaseService';
-import { uiTranslations } from './translations';
-import Layout from './components/Layout';
-import PhraseInput from './components/PhraseInput';
-import FlashcardItem from './components/FlashcardItem';
-import PracticeMode from './components/PracticeMode';
-import ExamMode from './components/ExamMode';
-import ExamReportView from './components/ExamReport';
-import MasteryLab from './components/MasteryLab';
-import StatisticsView from './components/StatisticsView';
-import LiveTutor from './components/LiveTutor';
+import { Language, Flashcard, ExamReport, PracticeResult } from './types.ts';
+import { translatePhrase } from './services/geminiService.ts';
+import { firebaseService } from './services/firebaseService.ts';
+import { uiTranslations } from './translations.ts';
+import Layout from './components/Layout.tsx';
+import PhraseInput from './components/PhraseInput.tsx';
+import FlashcardItem from './components/FlashcardItem.tsx';
+import PracticeMode from './components/PracticeMode.tsx';
+import ExamMode from './components/ExamMode.tsx';
+import ExamReportView from './components/ExamReport.tsx';
+import MasteryLab from './components/MasteryLab.tsx';
+import StatisticsView from './components/StatisticsView.tsx';
+import LiveTutor from './components/LiveTutor.tsx';
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Language>(Language.ENGLISH);
@@ -108,7 +108,6 @@ const App: React.FC = () => {
       nextReviewAt: Date.now() + (newInterval * dayInMs)
     };
     
-    // Save to Firebase asynchronously
     firebaseService.saveCard(updatedCard).catch(console.error);
     
     return updatedCard;
@@ -196,7 +195,7 @@ const App: React.FC = () => {
       if (sortOrder === 'alphabetical') {
         return a.phrase.localeCompare(b.phrase);
       }
-      return b.createdAt - a.createdAt; // Default: Date (Newest first)
+      return b.createdAt - a.createdAt;
     });
   }, [currentTabCards, searchTerm, sortOrder]);
   
