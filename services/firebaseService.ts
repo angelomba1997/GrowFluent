@@ -75,9 +75,8 @@ export const firebaseService = {
         return cards;
       } catch (e: any) {
         console.error("Firestore fetch error:", e.message);
-        // Error code 404 or string "not-found" indicates DB is missing
         if (e.message?.includes("not-found") || e.code === "not-found") {
-          firebaseActive = false; // Disable for this session
+          firebaseActive = false;
         }
       }
     }
@@ -96,8 +95,16 @@ export const firebaseService = {
 
     if (isFirebaseInitialized && firebaseActive) {
       try {
+        const cardToSave = { ...card };
+        // Si el string de la imagen excede un límite seguro para Firestore (1MB por documento)
+        // Lo omitimos en la sincronización a la nube para evitar errores, pero se mantiene en local.
+        if (cardToSave.mnemonicImageUrl && cardToSave.mnemonicImageUrl.length > 800000) {
+           console.warn(`Imagen mnemotécnica para "${card.phrase}" demasiado grande para Firestore. Se omitirá en la nube.`);
+           delete cardToSave.mnemonicImageUrl;
+        }
+
         const cardDoc = doc(db, `users/${UID}/flashcards`, card.id);
-        await setDoc(cardDoc, card);
+        await setDoc(cardDoc, cardToSave);
       } catch (e: any) {
         console.error("Firestore save error:", e.message);
         if (e.message?.includes("not-found") || e.code === "not-found") firebaseActive = false;
