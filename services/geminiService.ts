@@ -21,12 +21,6 @@ async function withRetry<T>(fn: () => Promise<T>, retries = 2, delay = 1500): Pr
   }
 }
 
-const getAI = () => {
-  const apiKey = process.env.API_KEY;
-  if (!apiKey) throw new Error("API_KEY_MISSING");
-  return new GoogleGenAI({ apiKey });
-};
-
 const getLangName = (lang: Language) => {
   switch(lang) {
     case Language.ENGLISH: return "Inglés (US)";
@@ -61,7 +55,7 @@ const compressImage = async (base64Str: string): Promise<string> => {
 
 export const generateMnemonicImage = async (phrase: string, translation: string): Promise<string | undefined> => {
   try {
-    const ai = getAI();
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash-image',
       contents: {
@@ -81,7 +75,7 @@ export const generateMnemonicImage = async (phrase: string, translation: string)
 
 export const translatePhrase = async (phrase: string, sourceLang: Language): Promise<TranslationResponse> => {
   return withRetry(async () => {
-    const ai = getAI();
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: `Analiza la palabra o frase: "${phrase}" para un estudiante de ${getLangName(sourceLang)}. El usuario es nativo de Español (Latinoamericano). Devuelve un objeto JSON estructurado con explicaciones detalladas y ejemplos naturales.`,
@@ -106,8 +100,6 @@ export const translatePhrase = async (phrase: string, sourceLang: Language): Pro
     });
     
     const baseData = JSON.parse(response.text.trim());
-    
-    // Intentamos generar la imagen pero no dejamos que un fallo aquí bloquee todo el proceso
     let mnemonicImageUrl;
     try {
       mnemonicImageUrl = await generateMnemonicImage(phrase, baseData.translation);
@@ -121,7 +113,7 @@ export const translatePhrase = async (phrase: string, sourceLang: Language): Pro
 
 export const gradeAnswer = async (prompt: string, userAnswer: string, correctAnswer: string, targetLang: Language, isAudio = false, audioBase64?: string): Promise<GradingResponse> => {
   return withRetry(async () => {
-    const ai = getAI();
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const parts: any[] = [{ text: `Evalúa la respuesta del usuario. Contexto/Pregunta: ${prompt}. Respuesta esperada: ${correctAnswer}. Respuesta del usuario: ${userAnswer}. Idioma objetivo: ${getLangName(targetLang)}. Devuelve JSON con feedback constructivo.` }];
     if (isAudio && audioBase64) {
       parts.unshift({ inlineData: { mimeType: 'audio/webm', data: audioBase64 } });
@@ -153,7 +145,7 @@ export const gradeAnswer = async (prompt: string, userAnswer: string, correctAns
 
 export const generateExamQuestions = async (cards: Flashcard[], targetLang: Language): Promise<ExamExercise[]> => {
   return withRetry(async () => {
-    const ai = getAI();
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const cardsData = cards.map(c => `${c.phrase} -> ${c.translation}`).join('\n');
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
@@ -182,7 +174,7 @@ export const generateExamQuestions = async (cards: Flashcard[], targetLang: Lang
 
 export const evaluateSentence = async (sentence: string, targetWord: string, lang: Language): Promise<SentenceEvaluation> => {
   return withRetry(async () => {
-    const ai = getAI();
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: `Evalúa si la oración "${sentence}" utiliza correctamente la palabra "${targetWord}" en un contexto natural de ${getLangName(lang)}. Proporciona correcciones si es necesario.`,
@@ -206,7 +198,7 @@ export const evaluateSentence = async (sentence: string, targetWord: string, lan
 
 export const generateAudio = async (text: string, lang: Language): Promise<string | undefined> => {
   return withRetry(async () => {
-    const ai = getAI();
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const voiceName = lang === Language.CATALAN ? 'Kore' : lang === Language.FRENCH ? 'Puck' : 'Zephyr';
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash-preview-tts",
@@ -222,7 +214,7 @@ export const generateAudio = async (text: string, lang: Language): Promise<strin
 
 export const evaluatePronunciation = async (audioBase64: string, targetText: string, lang: Language, mimeType = 'audio/webm'): Promise<PronunciationEvaluation> => {
   return withRetry(async () => {
-    const ai = getAI();
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: { parts: [{ inlineData: { mimeType, data: audioBase64 } }, { text: `Analiza la pronunciación del usuario para: "${targetText}" en ${getLangName(lang)}. Evalúa ritmo y claridad.` }] },
