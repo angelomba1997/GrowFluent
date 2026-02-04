@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Language } from '../types';
 import { uiTranslations } from '../translations';
@@ -26,11 +25,11 @@ const Layout: React.FC<LayoutProps> = ({ children, currentLang }) => {
         <div className="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-100">
-              <i className="fas fa-language text-white text-xl"></i>
+              <i className="fas fa-seedling text-white text-xl"></i>
             </div>
             <div>
               <h1 className="text-lg font-black bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-violet-600 leading-none">
-                Polyglot Lab
+                GrowFluent
               </h1>
               <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">AI Language Tutor</span>
             </div>

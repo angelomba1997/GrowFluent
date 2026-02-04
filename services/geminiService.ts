@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Type, Modality } from "@google/genai";
 import { Language, TranslationResponse, GradingResponse, ExamExercise, Flashcard, PronunciationEvaluation, SentenceEvaluation } from "../types";
 
@@ -68,7 +67,7 @@ export const generateMnemonicImage = async (phrase: string, translation: string)
       return await compressImage(`data:image/png;base64,${imagePart.inlineData.data}`);
     }
   } catch (e) {
-    console.warn("No se pudo generar la imagen mnemotécnica, continuando sin ella.");
+    console.warn("No se pudo generar la imagen mnemotécnica.");
   }
   return undefined;
 };

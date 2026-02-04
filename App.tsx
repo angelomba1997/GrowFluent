@@ -48,8 +48,8 @@ const App: React.FC = () => {
           firebaseService.getCards(),
           firebaseService.getExamHistory()
         ]);
-        setCards(firebaseCards || []);
-        setExamHistory(firebaseHistory || []);
+        setCards(firebaseCards);
+        setExamHistory(firebaseHistory);
       } catch (e) {
         console.error("Error cargando datos:", e);
       } finally {
@@ -358,7 +358,7 @@ const App: React.FC = () => {
             ) : (
               <div className="text-center py-20 bg-white rounded-3xl border-4 border-dashed border-slate-50">
                 <i className="fas fa-search text-4xl text-slate-100 mb-4"></i>
-                <p className="text-slate-400 font-bold italic">{searchTerm ? (activeTab === Language.FRENCH ? 'Aucun résultat trouvé' : 'Sin resultados') : t.emptyDict}</p>
+                <p className="text-slate-400 font-bold italic">{searchTerm ? 'Aucun resultado encontrado' : t.emptyDict}</p>
               </div>
             )}
           </div>
