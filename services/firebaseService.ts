@@ -1,5 +1,5 @@
 
-import { initializeApp, getApp, getApps, FirebaseApp } from "firebase/app";
+import { initializeApp, getApp, getApps } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
 import { 
   getFirestore, 
   collection, 
@@ -8,9 +8,8 @@ import {
   setDoc, 
   deleteDoc, 
   query, 
-  orderBy,
-  Firestore
-} from "firebase/firestore";
+  orderBy 
+} from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 import { Flashcard, ExamReport } from "../types";
 
 // Configuración de Firebase para el proyecto 'grow-fluent'
@@ -23,16 +22,16 @@ const firebaseConfig = {
   appId: "1:475885168904:web:c7a05a3229b89cb09fa4bd"
 };
 
-let db: Firestore | null = null;
+let db: any = null;
 
 /**
- * Obtiene la instancia de Firestore asegurando que la App esté inicializada.
- * Se unifica a la versión 11.1.0 importada en el index.html.
+ * Obtiene la instancia de Firestore asegurando que la App esté inicializada
+ * utilizando únicamente las librerías cargadas desde Gstatic v11.1.0.
  */
-const getDb = (): Firestore | null => {
+const getDb = (): any => {
   if (db) return db;
   try {
-    const app: FirebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+    const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
     db = getFirestore(app);
     return db;
   } catch (e) {
@@ -73,11 +72,11 @@ export const firebaseService = {
         const cardsCol = collection(firestore, `users/${UID}/flashcards`);
         const q = query(cardsCol, orderBy("createdAt", "desc"));
         const snapshot = await getDocs(q);
-        const cards = snapshot.docs.map(doc => doc.data() as Flashcard);
+        const cards = snapshot.docs.map((doc: any) => doc.data() as Flashcard);
         saveLocalData(LOCAL_CARDS_KEY, cards);
         return cards;
       } catch (e) {
-        console.warn("Firestore no disponible, usando almacenamiento local.");
+        console.warn("Firestore no disponible en este momento, usando datos locales.");
       }
     }
     return getLocalData<Flashcard>(LOCAL_CARDS_KEY);
@@ -94,13 +93,13 @@ export const firebaseService = {
     if (firestore) {
       try {
         const cardToSave = { ...card };
-        // Limitar tamaño de imagen para Firestore
+        // Evitar superar el límite de 1MB de Firestore por documento
         if (cardToSave.mnemonicImageUrl && cardToSave.mnemonicImageUrl.length > 800000) {
            delete cardToSave.mnemonicImageUrl;
         }
         await setDoc(doc(firestore, `users/${UID}/flashcards`, card.id), cardToSave);
       } catch (e) {
-        console.error("Error al guardar en la nube:", e);
+        console.error("Error al persistir en la nube:", e);
       }
     }
   },
@@ -126,11 +125,11 @@ export const firebaseService = {
         const historyCol = collection(firestore, `users/${UID}/examHistory`);
         const q = query(historyCol, orderBy("date", "desc"));
         const snapshot = await getDocs(q);
-        const history = snapshot.docs.map(doc => doc.data() as ExamReport);
+        const history = snapshot.docs.map((doc: any) => doc.data() as ExamReport);
         saveLocalData(LOCAL_HISTORY_KEY, history);
         return history;
       } catch (e) {
-        console.warn("Historial en la nube no disponible.");
+        console.warn("Historial en la nube inaccesible.");
       }
     }
     return getLocalData<ExamReport>(LOCAL_HISTORY_KEY);
@@ -146,7 +145,7 @@ export const firebaseService = {
       try {
         await setDoc(doc(firestore, `users/${UID}/examHistory`, report.id), report);
       } catch (e) {
-        console.error("Error al guardar reporte:", e);
+        console.error("Error al guardar reporte en Firestore:", e);
       }
     }
   }
