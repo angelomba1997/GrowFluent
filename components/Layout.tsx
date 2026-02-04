@@ -5,11 +5,10 @@ import { uiTranslations } from '../translations';
 
 interface LayoutProps {
   children: React.ReactNode;
-  onManageKey: () => void;
   currentLang: Language;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children, onManageKey, currentLang }) => {
+const Layout: React.FC<LayoutProps> = ({ children, currentLang }) => {
   const t = uiTranslations[currentLang];
 
   const getLangBadge = () => {
@@ -38,14 +37,6 @@ const Layout: React.FC<LayoutProps> = ({ children, onManageKey, currentLang }) =
           </div>
           
           <div className="flex items-center space-x-3">
-            <button 
-              onClick={onManageKey}
-              className="flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition-all border border-slate-200"
-              title={t.switchKey}
-            >
-              <i className="fas fa-key text-xs"></i>
-              <span className="text-[10px] font-black uppercase tracking-tight hidden sm:inline">{t.myKey}</span>
-            </button>
             <div className="h-6 w-px bg-slate-200 hidden sm:block"></div>
             <div className="text-[10px] font-black text-slate-400 uppercase tracking-tighter hidden sm:block">
               ES <i className="fas fa-arrow-right mx-1 text-[8px] text-indigo-300"></i> {getLangBadge()}

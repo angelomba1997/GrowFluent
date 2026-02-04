@@ -49,11 +49,6 @@ export const uiTranslations = {
     analyzing: "Analyzing forgetting curve...",
     generatingExam: "Generating AI Exam...",
     personalizing: "Syncing with your personal dictionary",
-    quotaTitle: "Quota Reached!",
-    quotaMessage: "Please connect your own key for unlimited sessions.",
-    connectKey: "Connect My Key",
-    keyStatusShared: "Shared mode active.",
-    myKey: "My Key",
     labTitle: "Mastery Lab",
     labSub: "Create sentences with mastered words",
     labEnter: "Enter Lab",
@@ -84,8 +79,7 @@ export const uiTranslations = {
     sortBy: "Sort by",
     dateAdded: "Date Added",
     alphabetical: "Alphabetical",
-    yourAnswer: "Your Answer",
-    switchKey: "Configure Key"
+    yourAnswer: "Your Answer"
   },
   [Language.CATALAN]: {
     smartSession: "Repàs Diari",
@@ -134,11 +128,6 @@ export const uiTranslations = {
     analyzing: "Analitzant corba d'oblit...",
     generatingExam: "Generant Examen IA...",
     personalizing: "Sincronitzant amb el teu diccionari",
-    quotaTitle: "Quota Assolida!",
-    quotaMessage: "Connecta la teva clau per sessions il·limitades.",
-    connectKey: "Connectar Clau",
-    keyStatusShared: "Mode compartit.",
-    myKey: "La Meva Clau",
     labTitle: "Laboratori de Mestria",
     labSub: "Crea oracions amb paraules dominades",
     labEnter: "Entrar al Lab",
@@ -169,8 +158,7 @@ export const uiTranslations = {
     sortBy: "Ordena per",
     dateAdded: "Data d'Afegit",
     alphabetical: "Alfabètic",
-    yourAnswer: "La teva resposta",
-    switchKey: "Configurar Clau"
+    yourAnswer: "La teva resposta"
   },
   [Language.FRENCH]: {
     smartSession: "Révision Quotidienne",
@@ -219,11 +207,6 @@ export const uiTranslations = {
     analyzing: "Analyse de la courbe d'oubli...",
     generatingExam: "Génération de l'Examen IA...",
     personalizing: "Synchronisation avec votre dictionnaire",
-    quotaTitle: "Quota Atteint !",
-    quotaMessage: "Connectez votre propre clé pour des sessions illimitées.",
-    connectKey: "Connecter ma Clé",
-    keyStatusShared: "Mode partagé actif.",
-    myKey: "Ma Clé",
     labTitle: "Laboratoire de Maîtrise",
     labSub: "Créez des phrases avec des mots maîtrisés",
     labEnter: "Entrer dans le Lab",
@@ -254,7 +237,6 @@ export const uiTranslations = {
     sortBy: "Trier par",
     dateAdded: "Date d'Ajout",
     alphabetical: "Alphabétique",
-    yourAnswer: "Votre Réponse",
-    switchKey: "Configurer la Clé"
+    yourAnswer: "Votre Réponse"
   }
 };

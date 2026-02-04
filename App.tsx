@@ -20,8 +20,6 @@ const App: React.FC = () => {
   const [examHistory, setExamHistory] = useState<ExamReport[]>([]);
   const [isLoadingCards, setIsLoadingCards] = useState(true);
   const [isLoadingAdd, setIsLoadingAdd] = useState(false);
-  const [errorQuota, setErrorQuota] = useState(false);
-  const [hasUserKey, setHasUserKey] = useState<boolean | null>(null);
   
   // Navigation & Session States
   const [isPracticing, setIsPracticing] = useState(false);
@@ -37,7 +35,7 @@ const App: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOrder, setSortOrder] = useState<'date' | 'alphabetical'>('date');
   
-  // Stable session cards to prevent UI jumps
+  // Stable session cards
   const [currentSessionCards, setCurrentSessionCards] = useState<Flashcard[]>([]);
 
   const t = uiTranslations[activeTab];
@@ -53,31 +51,13 @@ const App: React.FC = () => {
         setCards(firebaseCards);
         setExamHistory(firebaseHistory);
       } catch (e) {
-        console.error("Error loading Firebase data", e);
+        console.error("Error cargando datos:", e);
       } finally {
         setIsLoadingCards(false);
       }
     };
     initData();
-
-    const checkKey = async () => {
-      try {
-        if ((window as any).aistudio?.hasSelectedApiKey) {
-          const hasKey = await (window as any).aistudio.hasSelectedApiKey();
-          setHasUserKey(hasKey);
-        }
-      } catch (e) { console.error(e); }
-    };
-    checkKey();
   }, []);
-
-  const handleOpenKeyDialog = async () => {
-    if ((window as any).aistudio?.openSelectKey) {
-      await (window as any).aistudio.openSelectKey();
-      setErrorQuota(false);
-      setHasUserKey(true);
-    }
-  };
 
   const calculateNextSRS = (card: Flashcard, isCorrect: boolean): Flashcard => {
     let { repetitionCount, easinessFactor, lastInterval } = card;
@@ -109,17 +89,13 @@ const App: React.FC = () => {
     };
     
     firebaseService.saveCard(updatedCard).catch(console.error);
-    
     return updatedCard;
   };
 
   const handleAddPhrase = async (phrase: string) => {
-    console.log(`Attempting to add phrase: "${phrase}"`);
     setIsLoadingAdd(true);
-    setErrorQuota(false);
     try {
       const data = await translatePhrase(phrase, activeTab);
-      console.log("Translation data received:", data);
       
       const newCard: Flashcard = {
         id: crypto.randomUUID(),
@@ -139,19 +115,11 @@ const App: React.FC = () => {
         sentenceHistory: []
       };
       
-      console.log("Saving card to database...");
       await firebaseService.saveCard(newCard);
-      console.log("Card saved successfully.");
-      
       setCards(prev => [newCard, ...prev]);
     } catch (error: any) {
-      console.error("Error in handleAddPhrase:", error);
-      const isQuota = error?.message?.toLowerCase().includes('quota') || error?.status === 429;
-      if (isQuota) {
-        setErrorQuota(true);
-      } else {
-        alert("Hubo un error al procesar la palabra. Por favor intenta de nuevo.");
-      }
+      console.error("Error al añadir frase:", error);
+      alert("Hubo un error al procesar la palabra. Por favor intenta de nuevo.");
     } finally {
       setIsLoadingAdd(false);
     }
@@ -165,9 +133,7 @@ const App: React.FC = () => {
     
     setCards(prev => prev.map(card => {
       const result = report.results.find(r => r.cardId === card.id);
-      if (result) {
-        return calculateNextSRS(card, result.isCorrect);
-      }
+      if (result) return calculateNextSRS(card, result.isCorrect);
       return card;
     }));
   };
@@ -184,7 +150,7 @@ const App: React.FC = () => {
         await firebaseService.removeCard(id);
         setCards(prev => prev.filter(c => c.id !== id));
       } catch (e) {
-        console.error("Error deleting card", e);
+        console.error("Error eliminando tarjeta:", e);
       }
     }
   };
@@ -193,7 +159,6 @@ const App: React.FC = () => {
 
   const filteredDictionaryCards = useMemo(() => {
     let filtered = [...currentTabCards];
-    
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(c => 
@@ -201,11 +166,8 @@ const App: React.FC = () => {
         c.translation.toLowerCase().includes(term)
       );
     }
-
     return filtered.sort((a, b) => {
-      if (sortOrder === 'alphabetical') {
-        return a.phrase.localeCompare(b.phrase);
-      }
+      if (sortOrder === 'alphabetical') return a.phrase.localeCompare(b.phrase);
       return b.createdAt - a.createdAt;
     });
   }, [currentTabCards, searchTerm, sortOrder]);
@@ -265,7 +227,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <Layout onManageKey={handleOpenKeyDialog} currentLang={activeTab}>
+    <Layout currentLang={activeTab}>
       <div className="flex p-1 bg-slate-200/50 rounded-2xl mb-8 relative">
         <button 
           onClick={() => { setActiveTab(Language.ENGLISH); resetViews(); }} 
@@ -383,23 +345,6 @@ const App: React.FC = () => {
                       <i className="fas fa-times-circle"></i>
                     </button>
                   )}
-                </div>
-                
-                <div className="flex items-center space-x-1 bg-white p-1 rounded-2xl border-2 border-slate-100 shadow-sm">
-                  <button 
-                    onClick={() => setSortOrder('date')}
-                    className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-tighter transition-all ${sortOrder === 'date' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:bg-slate-50'}`}
-                    title={t.dateAdded}
-                  >
-                    <i className="fas fa-calendar-alt mr-1"></i> {t.dateAdded}
-                  </button>
-                  <button 
-                    onClick={() => setSortOrder('alphabetical')}
-                    className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-tighter transition-all ${sortOrder === 'alphabetical' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:bg-slate-50'}`}
-                    title={t.alphabetical}
-                  >
-                    <i className="fas fa-sort-alpha-down mr-1"></i> {t.alphabetical}
-                  </button>
                 </div>
               </div>
             </div>
