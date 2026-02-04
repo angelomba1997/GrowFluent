@@ -1,5 +1,5 @@
 
-import { initializeApp, getApp, getApps } from "firebase/app";
+import { initializeApp, getApp, getApps, FirebaseApp } from "firebase/app";
 import { 
   getFirestore, 
   collection, 
@@ -8,7 +8,8 @@ import {
   setDoc, 
   deleteDoc, 
   query, 
-  orderBy
+  orderBy,
+  Firestore
 } from "firebase/firestore";
 import { Flashcard, ExamReport } from "../types";
 
@@ -22,17 +23,22 @@ const firebaseConfig = {
   appId: "1:475885168904:web:c7a05a3229b89cb09fa4bd"
 };
 
-let db: any = null;
+let db: Firestore | null = null;
 let firebaseActive = true;
 
-try {
-  // Use existing app if initialized, otherwise initialize new one
-  const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-  db = getFirestore(app);
-} catch (e) {
-  console.warn("Firebase/Firestore initialization failed:", e);
-  firebaseActive = false;
-}
+const getDb = (): Firestore | null => {
+  if (db) return db;
+  try {
+    const app: FirebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+    db = getFirestore(app);
+    console.log("Firestore initialized successfully");
+    return db;
+  } catch (e) {
+    console.error("Firebase/Firestore initialization failed:", e);
+    firebaseActive = false;
+    return null;
+  }
+};
 
 const getUserId = () => {
   let uid = localStorage.getItem('grow_fluent_uid');
@@ -62,19 +68,17 @@ const saveLocalData = <T>(key: string, data: T[]) => {
 
 export const firebaseService = {
   async getCards(): Promise<Flashcard[]> {
-    if (db && firebaseActive) {
+    const firestore = getDb();
+    if (firestore && firebaseActive) {
       try {
-        const cardsCol = collection(db, `users/${UID}/flashcards`);
+        const cardsCol = collection(firestore, `users/${UID}/flashcards`);
         const q = query(cardsCol, orderBy("createdAt", "desc"));
         const snapshot = await getDocs(q);
         const cards = snapshot.docs.map(doc => doc.data() as Flashcard);
         saveLocalData(LOCAL_CARDS_KEY, cards);
         return cards;
       } catch (e: any) {
-        console.error("Firestore fetch error:", e.message);
-        if (e.message?.includes("not-found") || e.code === "not-found") {
-          firebaseActive = false;
-        }
+        console.warn("Firestore fetch error, falling back to local storage:", e.message);
       }
     }
     return getLocalData<Flashcard>(LOCAL_CARDS_KEY);
@@ -90,19 +94,20 @@ export const firebaseService = {
     }
     saveLocalData(LOCAL_CARDS_KEY, localCards);
 
-    if (db && firebaseActive) {
+    const firestore = getDb();
+    if (firestore && firebaseActive) {
       try {
         const cardToSave = { ...card };
+        // Basic check for image size to avoid Firestore document limits (max 1MB)
         if (cardToSave.mnemonicImageUrl && cardToSave.mnemonicImageUrl.length > 800000) {
            console.warn(`Imagen mnemotécnica para "${card.phrase}" demasiado grande para Firestore. Se omitirá en la nube.`);
            delete cardToSave.mnemonicImageUrl;
         }
 
-        const cardDoc = doc(db, `users/${UID}/flashcards`, card.id);
+        const cardDoc = doc(firestore, `users/${UID}/flashcards`, card.id);
         await setDoc(cardDoc, cardToSave);
       } catch (e: any) {
         console.error("Firestore save error:", e.message);
-        if (e.message?.includes("not-found") || e.code === "not-found") firebaseActive = false;
       }
     }
   },
@@ -112,29 +117,29 @@ export const firebaseService = {
     const filtered = localCards.filter(c => c.id !== id);
     saveLocalData(LOCAL_CARDS_KEY, filtered);
 
-    if (db && firebaseActive) {
+    const firestore = getDb();
+    if (firestore && firebaseActive) {
       try {
-        const cardDoc = doc(db, `users/${UID}/flashcards`, id);
+        const cardDoc = doc(firestore, `users/${UID}/flashcards`, id);
         await deleteDoc(cardDoc);
       } catch (e: any) {
         console.error("Firestore delete error:", e.message);
-        if (e.message?.includes("not-found") || e.code === "not-found") firebaseActive = false;
       }
     }
   },
 
   async getExamHistory(): Promise<ExamReport[]> {
-    if (db && firebaseActive) {
+    const firestore = getDb();
+    if (firestore && firebaseActive) {
       try {
-        const historyCol = collection(db, `users/${UID}/examHistory`);
+        const historyCol = collection(firestore, `users/${UID}/examHistory`);
         const q = query(historyCol, orderBy("date", "desc"));
         const snapshot = await getDocs(q);
         const history = snapshot.docs.map(doc => doc.data() as ExamReport);
         saveLocalData(LOCAL_HISTORY_KEY, history);
         return history;
       } catch (e: any) {
-        console.error("Firestore history fetch error:", e.message);
-        if (e.message?.includes("not-found") || e.code === "not-found") firebaseActive = false;
+        console.warn("Firestore history fetch error, falling back to local storage:", e.message);
       }
     }
     return getLocalData<ExamReport>(LOCAL_HISTORY_KEY);
@@ -145,13 +150,13 @@ export const firebaseService = {
     localHistory.unshift(report);
     saveLocalData(LOCAL_HISTORY_KEY, localHistory);
 
-    if (db && firebaseActive) {
+    const firestore = getDb();
+    if (firestore && firebaseActive) {
       try {
-        const reportDoc = doc(db, `users/${UID}/examHistory`, report.id);
+        const reportDoc = doc(firestore, `users/${UID}/examHistory`, report.id);
         await setDoc(reportDoc, report);
       } catch (e: any) {
         console.error("Firestore report save error:", e.message);
-        if (e.message?.includes("not-found") || e.code === "not-found") firebaseActive = false;
       }
     }
   }
